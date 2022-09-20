@@ -5,8 +5,9 @@
 # 2 - SSH Port
 # 3 - Timezone
 # 4 - Disable ping (for yes "true")
-# 5 - Redirect URL
-# 6 - Clients IP whitelist (separate by ",")
+# 5 - Disable IPv6 (for yes "true")
+# 6 - Redirect URL
+# 7 - Clients IP whitelist (separate by ",")
 
 # Detecting init mode
 param_mode=$1
@@ -17,20 +18,23 @@ if [[ "$param_mode" == "-p" ]] || [[ "$param_mode" == "--params" ]]; then
   param_ssh_port=$3
   param_time_zone=$4
   param_ping_disable=$5
-  param_redirect_url=$6
-  param_whitelist_ips=$7
+  param_ipv6_disable=$6
+  param_redirect_url=$7
+  param_whitelist_ips=$8
 else
-  echo "Enter parameters or leave blank for no changes (6 steps)"
+  echo "Enter parameters or leave blank for no changes (7 steps)"
   read -rp "1. Hostname: " param_host_name
   read -rp "2. SSH port: " param_ssh_port
   read -rp "3. Timezone: " param_time_zone
   read -rp "4. Disable ping?: " param_ping_disable
-  read -rp "5. URL for redirection: " param_redirect_url
-  read -rp "6. Clients IP whitelist: " param_whitelist_ips
+  read -rp "5. Disable IPv6?: " param_ipv6_disable
+  read -rp "6. URL for redirection: " param_redirect_url
+  read -rp "7. Clients IP whitelist: " param_whitelist_ips
 fi
 
 # Modify params
 if [ -z "${param_ping_disable}" ]; then param_ping_disable="false"; else param_ping_disable="true"; fi
+if [ -z "${param_ipv6_disable}" ]; then param_ipv6_disable="false"; else param_ipv6_disable="true"; fi
 if [ -z "${param_whitelist_ips}" ]; then param_whitelist_ips=$(echo "${SSH_CLIENT}" | awk '{ print $1}'); fi
 param_host_ip=$(ip addr show | grep 'inet ' | grep -v 127.0.0.1 | awk '{print $2}' | cut -d/ -f1)
 
@@ -44,6 +48,7 @@ if [ -z "${param_host_name}" ]; then print_host_name="${cRed}no change${cEnd}"; 
 if [ -z "${param_ssh_port}" ]; then print_ssh_port="${cRed}no change${cEnd}"; else print_ssh_port="${cYellow}${param_ssh_port}${cEnd}"; fi
 if [ -z "${param_time_zone}" ]; then print_time_zone="${cRed}no change${cEnd}"; else print_time_zone="${cYellow}${param_time_zone}${cEnd}"; fi
 if [[ "$param_ping_disable" == "false" ]]; then print_ping_disable="${cRed}no change${cEnd}"; else print_ping_disable="${cYellow}${param_ping_disable}${cEnd}"; fi
+if [[ "$param_ipv6_disable" == "false" ]]; then print_ipv6_disable="${cRed}no change${cEnd}"; else print_ipv6_disable="${cYellow}${param_ipv6_disable}${cEnd}"; fi
 if [ -z "${param_redirect_url}" ]; then print_redirect_url="${cRed}no change${cEnd}"; else print_redirect_url="${cYellow}${param_redirect_url}${cEnd}"; fi
 
 echo "=================================================="
@@ -51,9 +56,10 @@ echo -e "${cGreen}1. Host name:    ${print_host_name}"
 echo -e "${cGreen}2. SSH port:     ${print_ssh_port}"
 echo -e "${cGreen}3. Timezone:     ${print_time_zone}"
 echo -e "${cGreen}4. Disable ping: ${print_ping_disable}"
-echo -e "${cGreen}5. Redirect URL: ${print_redirect_url}"
-echo -e "${cGreen}6. Whitelist IP: ${cYellow}${param_whitelist_ips}${cEnd}"
-echo -e "${cGreen}7. Host IP:      ${cYellow}${param_host_ip}${cEnd}"
+echo -e "${cGreen}5. Disable IPv6: ${print_ipv6_disable}"
+echo -e "${cGreen}6. Redirect URL: ${print_redirect_url}"
+echo -e "${cGreen}7. Whitelist IP: ${cYellow}${param_whitelist_ips}${cEnd}"
+echo -e "${cGreen}8. Host IP:      ${cYellow}${param_host_ip}${cEnd}"
 echo "=================================================="
 
 if ! [[ "$param_mode" == "-p" ]] && ! [[ "$param_mode" == "--params" ]]; then
@@ -97,10 +103,15 @@ if [ -n "${param_ssh_port}" ]; then
   sed -i "s/Port [0-9]*/Port ${param_ssh_port}/g" /etc/ssh/sshd_config
 fi
 
-# Disable PING response and IPV6 protocol
+# Disable PING response
 if [[ "$param_ping_disable" == "true" ]]; then
   echo "1" >/proc/sys/net/ipv4/icmp_echo_ignore_all
   echo "net.ipv4.icmp_echo_ignore_all = 1" >>/etc/sysctl.conf
+  sysctl -p
+fi
+
+# Disable IPV6 protocol
+if [[ "$param_ipv6_disable" == "true" ]]; then
   echo "net.ipv6.conf.all.disable_ipv6 = 1" >>/etc/sysctl.conf
   sysctl -p
 fi
