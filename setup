@@ -47,14 +47,16 @@ echo -e "${cGreen}Whitelist IP: ${cYellow} ${param_whitelist_ips}${cEnd}"
 echo -e "${cGreen}Host IP:      ${cYellow} ${param_host_ip}${cEnd}"
 echo "=================================================="
 
-while true; do
+if [ -z "$1" ]; then
+  while true; do
     read -p "It is all OK? Can we proceed? [y|n]: " yn
     case $yn in
-        [Yy]* ) break;;
-        [Nn]* ) exit;;
-        * ) echo "It is all OK? Can we proceed? [y|n]: ";;
+    [Yy]*) break ;;
+    [Nn]*) exit ;;
+    *) echo "It is all OK? Can we proceed? [y|n]: " ;;
     esac
-done
+  done
+fi
 
 # Update & upgrade
 apt -y update
@@ -104,9 +106,8 @@ sed -i '/ufw-before-input.*icmp/s/ACCEPT/DROP/g' /etc/ufw/before.rules
 ufw default deny incoming
 ufw default allow outgoing
 ufw allow "${param_ssh_port}"/tcp
-for ip in ${param_whitelist_ips//,/ }
-do
-    ufw allow from "${ip}" to any
+for ip in ${param_whitelist_ips//,/ }; do
+  ufw allow from "${ip}" to any
 done
 echo "y" | ufw enable
 
