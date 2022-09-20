@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Params list
+# Params list (use -p or --params)
 # 1 - Host name
 # 2 - SSH Port
 # 3 - Timezone
@@ -9,13 +9,16 @@
 # 6 - Clients IP whitelist (separate by ",")
 
 # Detecting init mode
-if [ -n "$1" ]; then
-  param_host_name=$1
-  param_ssh_port=$2
-  param_time_zone=$3
-  param_ping_disable=$4
-  param_redirect_url=$5
-  param_whitelist_ips=$6
+param_mode=$1
+
+# Set user params
+if [[ "$param_mode" == "-p" ]] || [[ "$param_mode" == "--params" ]]; then
+  param_host_name=$2
+  param_ssh_port=$3
+  param_time_zone=$4
+  param_ping_disable=$5
+  param_redirect_url=$6
+  param_whitelist_ips=$7
 else
   echo "Enter parameters or leave blank for no changes (6 steps)"
   read -rp "1. Hostname: " param_host_name
@@ -26,7 +29,7 @@ else
   read -rp "6. Clients IP whitelist: " param_whitelist_ips
 fi
 
-# Set params
+# Modify params
 if [ -z "${param_ssh_port}" ]; then param_ssh_port="22"; fi
 if [ -z "${param_ping_disable}" ]; then param_ping_disable="false"; else param_ping_disable="true"; fi
 if [ -z "${param_whitelist_ips}" ]; then param_whitelist_ips=$(echo "${SSH_CLIENT}" | awk '{ print $1}'); fi
@@ -47,7 +50,7 @@ echo -e "${cGreen}Whitelist IP: ${cYellow} ${param_whitelist_ips}${cEnd}"
 echo -e "${cGreen}Host IP:      ${cYellow} ${param_host_ip}${cEnd}"
 echo "=================================================="
 
-if [ -z "$1" ]; then
+if ! [[ "$param_mode" == "-p" ]] && ! [[ "$param_mode" == "--params" ]]; then
   while true; do
     read -rp "It is all OK? Can we proceed? [y|n]: " yn
     case $yn in
