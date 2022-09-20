@@ -47,13 +47,13 @@ if [[ "$param_ping_disable" == "false" ]]; then print_ping_disable="${cRed}no ch
 if [ -z "${param_redirect_url}" ]; then print_redirect_url="${cRed}no change${cEnd}"; else print_redirect_url="${cYellow}${param_redirect_url}${cEnd}"; fi
 
 echo "=================================================="
-echo -e "${cGreen}Host name:    ${cYellow} ${print_host_name}${cEnd}"
-echo -e "${cGreen}SSH port:     ${cYellow} ${print_ssh_port}${cEnd}"
-echo -e "${cGreen}Timezone:     ${cYellow} ${print_time_zone}${cEnd}"
-echo -e "${cGreen}Disable ping: ${cYellow} ${print_ping_disable}${cEnd}"
-echo -e "${cGreen}Redirect URL: ${cYellow} ${print_redirect_url}${cEnd}"
-echo -e "${cGreen}Whitelist IP: ${cYellow} ${param_whitelist_ips}${cEnd}"
-echo -e "${cGreen}Host IP:      ${cYellow} ${param_host_ip}${cEnd}"
+echo -e "${cGreen}1. Host name:    ${print_host_name}"
+echo -e "${cGreen}2. SSH port:     ${print_ssh_port}"
+echo -e "${cGreen}3. Timezone:     ${print_time_zone}"
+echo -e "${cGreen}4. Disable ping: ${print_ping_disable}"
+echo -e "${cGreen}5. Redirect URL: ${print_redirect_url}"
+echo -e "${cGreen}6. Whitelist IP: ${cYellow}${param_whitelist_ips}${cEnd}"
+echo -e "${cGreen}7. Host IP:      ${cYellow}${param_host_ip}${cEnd}"
 echo "=================================================="
 
 if ! [[ "$param_mode" == "-p" ]] && ! [[ "$param_mode" == "--params" ]]; then
