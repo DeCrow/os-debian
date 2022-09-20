@@ -30,7 +30,6 @@ else
 fi
 
 # Modify params
-if [ -z "${param_ssh_port}" ]; then param_ssh_port="22"; fi
 if [ -z "${param_ping_disable}" ]; then param_ping_disable="false"; else param_ping_disable="true"; fi
 if [ -z "${param_whitelist_ips}" ]; then param_whitelist_ips=$(echo "${SSH_CLIENT}" | awk '{ print $1}'); fi
 param_host_ip=$(ip addr show | grep 'inet ' | grep -v 127.0.0.1 | awk '{print $2}' | cut -d/ -f1)
@@ -38,14 +37,21 @@ param_host_ip=$(ip addr show | grep 'inet ' | grep -v 127.0.0.1 | awk '{print $2
 # Print params
 cGreen="\e[1;32m"
 cYellow="\e[1;33m"
+cRed="\e[1;91m"
 cEnd="\e[0m"
 
+if [ -z "${param_host_name}" ]; then print_host_name="${cRed}no change${cEnd}"; else print_host_name="${cYellow}${param_host_name}${cEnd}"; fi
+if [ -z "${param_ssh_port}" ]; then print_ssh_port="${cRed}no change${cEnd}"; else print_ssh_port="${cYellow}${param_ssh_port}${cEnd}"; fi
+if [ -z "${param_time_zone}" ]; then print_time_zone="${cRed}no change${cEnd}"; else print_time_zone="${cYellow}${param_time_zone}${cEnd}"; fi
+if [[ "$param_ping_disable" == "false" ]]; then print_ping_disable="${cRed}no change${cEnd}"; else print_ping_disable="${cYellow}${param_ping_disable}${cEnd}"; fi
+if [ -z "${param_redirect_url}" ]; then print_redirect_url="${cRed}no change${cEnd}"; else print_redirect_url="${cYellow}${param_redirect_url}${cEnd}"; fi
+
 echo "=================================================="
-echo -e "${cGreen}Host name:    ${cYellow} ${param_host_name}${cEnd}"
-echo -e "${cGreen}SSH port:     ${cYellow} ${param_ssh_port}${cEnd}"
-echo -e "${cGreen}Timezone:     ${cYellow} ${param_time_zone}${cEnd}"
-echo -e "${cGreen}Disable ping: ${cYellow} ${param_ping_disable}${cEnd}"
-echo -e "${cGreen}Redirect URL: ${cYellow} ${param_redirect_url}${cEnd}"
+echo -e "${cGreen}Host name:    ${cYellow} ${print_host_name}${cEnd}"
+echo -e "${cGreen}SSH port:     ${cYellow} ${print_ssh_port}${cEnd}"
+echo -e "${cGreen}Timezone:     ${cYellow} ${print_time_zone}${cEnd}"
+echo -e "${cGreen}Disable ping: ${cYellow} ${print_ping_disable}${cEnd}"
+echo -e "${cGreen}Redirect URL: ${cYellow} ${print_redirect_url}${cEnd}"
 echo -e "${cGreen}Whitelist IP: ${cYellow} ${param_whitelist_ips}${cEnd}"
 echo -e "${cGreen}Host IP:      ${cYellow} ${param_host_ip}${cEnd}"
 echo "=================================================="
@@ -86,7 +92,10 @@ if [ -n "${param_time_zone}" ]; then
 fi
 
 # Set new SSH port
-sed -i "s/#Port 22/Port ${param_ssh_port}/g" /etc/ssh/sshd_config
+if [ -n "${param_ssh_port}" ]; then
+  sed -i "s/#Port/Port/g" /etc/ssh/sshd_config
+  sed -i "s/Port [0-9]*/Port ${param_ssh_port}/g" /etc/ssh/sshd_config
+fi
 
 # Disable PING response and IPV6 protocol
 if [[ "$param_ping_disable" == "true" ]]; then
