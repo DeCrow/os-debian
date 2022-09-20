@@ -18,12 +18,12 @@ if [ -n "$1" ]; then
   param_whitelist_ips=$6
 else
   echo "Enter parameters or leave blank for no changes (6 steps)"
-  read -pr "1. Hostname: " param_host_name
-  read -pr "2. SSH port: " param_ssh_port
-  read -pr "3. Timezone: " param_time_zone
-  read -pr "4. Disable ping?: " param_ping_disable
-  read -pr "5. URL for redirection: " param_redirect_url
-  read -pr "6. Clients IP whitelist: " param_whitelist_ips
+  read -p "1. Hostname: " param_host_name
+  read -p "2. SSH port: " param_ssh_port
+  read -p "3. Timezone: " param_time_zone
+  read -p "4. Disable ping?: " param_ping_disable
+  read -p "5. URL for redirection: " param_redirect_url
+  read -p "6. Clients IP whitelist: " param_whitelist_ips
 fi
 
 # Set params
@@ -48,7 +48,7 @@ echo -e "${cGreen}Host IP:      ${cYellow} ${param_host_ip}${cEnd}"
 echo "=================================================="
 
 while true; do
-    read -pr "It is all OK? Can we proceed? [y|n]: " yn
+    read -p "It is all OK? Can we proceed? [y|n]: " yn
     case $yn in
         [Yy]* ) break;;
         [Nn]* ) exit;;
