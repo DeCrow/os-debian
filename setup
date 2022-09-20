@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Params list (use -p or --params)
+# Params list (use "-p" or "--params")
 # 1 - Host name
 # 2 - SSH Port
 # 3 - Timezone
