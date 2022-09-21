@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # Params list (use "-p" or "--params")
-# 1 - Host name
-# 2 - SSH Port
-# 3 - Timezone
-# 4 - Disable ping (for yes "true")
-# 5 - Disable IPv6 (for yes "true")
-# 6 - Redirect URL
+# 1 - Set server hostname
+# 2 - Set server SSH Port
+# 3 - Set server timezone
+# 4 - Disable IPv6? (for yes "true")
+# 5 - Allow ping only that length
+# 6 - Redirect URL from 80 port
 # 7 - Clients IP whitelist (separate by ",")
 
-# Detecting init mode
+# Get init mode param
 param_mode=$1
 
 # Set user params
@@ -22,7 +22,7 @@ if [[ "$param_mode" == "-p" ]] || [[ "$param_mode" == "--params" ]]; then
   param_redirect_url=$7
   param_whitelist_ips=$8
 else
-  echo "Enter parameters or leave blank for no changes (7 steps)"
+  echo "   Enter parameters or leave blank for no changes (7 steps)"
   read -rp "1. Hostname: " param_host_name
   read -rp "2. SSH port: " param_ssh_port
   read -rp "3. Timezone: " param_time_zone
