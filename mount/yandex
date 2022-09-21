@@ -1,4 +1,5 @@
-#!/bin/bash 
+#!/bin/bash
+
 # Params list (use "-p" or "--params")
 # 1 - Folder name in /mnt
 # 2 - Yandex Disc login
