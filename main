@@ -29,12 +29,12 @@ else
   read -rp "4. Disable IPv6?: " param_ipv6_disable
   read -rp "5. Allow ping length: " param_ping_length
   read -rp "6. URL for redirection: " param_redirect_url
-  read -rp "7. Clients IP whitelist: " param_whitelist_ips
+  read -rp "7. Clients IP whitelist ($(echo "${SSH_CLIENT}" | awk '{ print $1}')): " param_whitelist_ips
 fi
 
 # Modify params
 if [ -z "${param_ipv6_disable}" ]; then param_ipv6_disable="false"; else param_ipv6_disable="true"; fi
-if [ -z "${param_whitelist_ips}" ]; then param_whitelist_ips=$(echo "${SSH_CLIENT}" | awk '{ print $1}'); fi
+# if [ -z "${param_whitelist_ips}" ]; then param_whitelist_ips=$(echo "${SSH_CLIENT}" | awk '{ print $1}'); fi
 param_host_ip=$(ip addr show | grep 'inet ' | grep -v 127.0.0.1 | awk '{print $2}' | cut -d/ -f1)
 
 # Print params
@@ -79,7 +79,7 @@ apt -y dist-upgrade
 
 # Install dependencies
 apt -y install curl htop mc sed wget
-apt -y install fail2ban ufw knockd
+apt -y install fail2ban ufw
 
 # Set hostname
 if [ -n "${param_host_name}" ]; then
@@ -104,8 +104,8 @@ fi
 
 # Configure fail2ban
 cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-curl "https://raw.githubusercontent.com/DeCrow/setMyDebian/main/content/fail2ban/jail.local" >>/etc/fail2ban/jail.local
-wget -O "/etc/fail2ban/action.d/ssh-ufw.conf" "https://raw.githubusercontent.com/DeCrow/setMyDebian/main/content/fail2ban/ssh-ufw.conf"
+curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/fail2ban/jail.local" >>/etc/fail2ban/jail.local
+wget -O "/etc/fail2ban/action.d/ssh-ufw.conf" "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/fail2ban/ssh-ufw.conf"
 sed -i 's/enabled = true/enabled = false/g' /etc/fail2ban/jail.d/defaults-debian.conf
 systemctl restart fail2ban
 
@@ -120,9 +120,11 @@ fi
 ufw default deny incoming
 ufw default allow outgoing
 ufw allow "${param_ssh_port}"/tcp
-for ip in ${param_whitelist_ips//,/ }; do
-  ufw allow from "${ip}" to any
-done
+if [ -n "${param_whitelist_ips}" ]; then
+  for ip in ${param_whitelist_ips//,/ }; do
+    ufw allow from "${ip}" to any
+  done
+fi
 
 # Allow ping length
 if [ -n "${param_ping_length}" ]; then
@@ -136,18 +138,20 @@ echo "y" | ufw enable
 # Set redirect
 if [ -n "${param_redirect_url}" ]; then
   apt -y install nginx
-  curl "https://raw.githubusercontent.com/DeCrow/setMyDebian/main/content/nginx/default" >/etc/nginx/sites-available/default
+  curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/nginx/default" >/etc/nginx/sites-available/default
   sed -i "s/REDIRECT_URL/http:\/\/${param_redirect_url}/g" "/etc/nginx/sites-available/default"
-  service nginx restart
+  systemctl restart nginx
   ufw allow 80/tcp
 fi
 
 # Configure knockd
-wget -O /etc/knockd.conf 'https://raw.githubusercontent.com/DeCrow/setMyDebian/main/content/knockd/knockd.conf'
-sed -i 's/ProtectSystem=full/ProtectSystem=true/g' /usr/lib/systemd/system/knockd.service
-curl "https://raw.githubusercontent.com/DeCrow/setMyDebian/main/content/knockd/knockd.service" >/usr/lib/systemd/system/knockd.service
-sed -i 's/START_KNOCKD=0/START_KNOCKD=1/g' /etc/default/knockd
-systemctl enable systemd-networkd-wait-online.service
-systemctl daemon-reload
-systemctl enable knockd
-service knockd start
+if [ -n "${param_ssh_port}" ]; then
+  apt -y install knockd
+  wget -O /etc/knockd.conf 'https://raw.githubusercontent.com/DeCrow/os-debian/main/content/knockd/knockd.conf'
+  curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/knockd/knockd.service" >/usr/lib/systemd/system/knockd.service
+  sed -i 's/START_KNOCKD=0/START_KNOCKD=1/g' /etc/default/knockd
+  systemctl enable systemd-networkd-wait-online.service
+  systemctl daemon-reload
+  systemctl enable knockd
+  service knockd start
+fi
