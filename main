@@ -153,5 +153,5 @@ if [ -n "${param_ssh_port}" ]; then
   systemctl enable systemd-networkd-wait-online.service
   systemctl daemon-reload
   systemctl enable knockd
-  service knockd start
+  systemctl start knockd
 fi
