@@ -79,7 +79,7 @@ fi
 
 # Update & upgrade
 apt -y update
-if [[ "$param_upgrade_disable" == "true" ]]; then
+if [[ "$param_upgrade_disable" == "false" ]]; then
   apt -y upgrade
   apt -y dist-upgrade
 fi
