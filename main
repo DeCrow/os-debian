@@ -130,6 +130,10 @@ if [ -n "${param_ssh_port}" ]; then
   if [ -n "${firewall}" ]; then
     ufw allow "${param_ssh_port}"/tcp
   fi
+else
+  if [ -n "${firewall}" ]; then
+    ufw allow ssh
+  fi
 fi
 
 # Add IP to whitelist
