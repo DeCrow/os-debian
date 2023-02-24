@@ -115,10 +115,53 @@ if [ -n "${param_time_zone}" ]; then
   timedatectl set-timezone "${param_time_zone}"
 fi
 
+# Configure firewall
+if [[ "$param_ipv6_disable" == "true" ]] || [ -n "${param_ping_length}" ] || [ -n "${param_knockd_ports}" ] || [ -n "${param_whitelist_ips}" ]; then
+  firewall="true"
+  apt -y install ufw
+  ufw default deny incoming
+  ufw default allow outgoing
+fi
+
 # Set new SSH port
 if [ -n "${param_ssh_port}" ]; then
   sed -i "s/#Port/Port/g" /etc/ssh/sshd_config
   sed -i "s/Port [0-9]*/Port ${param_ssh_port}/g" /etc/ssh/sshd_config
+  if [ -n "${firewall}" ]; then
+    ufw allow "${param_ssh_port}"/tcp
+  fi
+fi
+
+# Add IP to whitelist
+if [ -n "${param_whitelist_ips}" ]; then
+  for ip in ${param_whitelist_ips//,/ }; do
+      ufw allow from "${ip}" to any
+  done
+fi
+
+# Disable IPV6 protocol
+if [[ "$param_ipv6_disable" == "true" ]]; then
+  sed -i 's/IPV6=yes/IPV6=no/g' /etc/default/ufw
+  echo "net.ipv6.conf.all.disable_ipv6 = 1" >>/etc/sysctl.conf
+  sysctl -p
+fi
+
+# Allow ping length
+if [ -n "${param_ping_length}" ]; then
+  length=$((param_ping_length+28))
+  sed -i '/ufw-before-input.*icmp/s/ACCEPT/DROP/g' /etc/ufw/before.rules
+  sed -i "/^\# End required lines/a \\\n# allow ping length\n-I INPUT -p icmp -j DROP\n-I INPUT -p icmp -m length --length ${length} -j ACCEPT\n" /etc/ufw/before.rules
+fi
+
+# Set redirect
+if [ -n "${param_redirect_url}" ]; then
+  apt -y install nginx
+  curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/nginx/default" >/etc/nginx/sites-available/default
+  sed -i "s/REDIRECT_URL/http:\/\/${param_redirect_url}/g" "/etc/nginx/sites-available/default"
+  systemctl restart nginx
+  if [ -n "${firewall}" ]; then
+    ufw allow 80/tcp
+  fi
 fi
 
 # Configure fail2ban
@@ -129,47 +172,6 @@ if [ -n "${param_knockd_ports}" ]; then
   wget -O "/etc/fail2ban/action.d/ssh-ufw.conf" "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/fail2ban/ssh-ufw.conf"
   sed -i 's/enabled = true/enabled = false/g' /etc/fail2ban/jail.d/defaults-debian.conf
   systemctl restart fail2ban
-fi
-
-# Disable IPV6 protocol
-if [[ "$param_ipv6_disable" == "true" ]]; then
-  sed -i 's/IPV6=yes/IPV6=no/g' /etc/default/ufw
-  echo "net.ipv6.conf.all.disable_ipv6 = 1" >>/etc/sysctl.conf
-  sysctl -p
-fi
-
-# Configure firewall
-if [ -n "${param_knockd_ports}" ]; then
-  apt -y install ufw
-  ufw default deny incoming
-  ufw default allow outgoing
-  ufw allow "${param_ssh_port}"/tcp
-  if [ -n "${param_whitelist_ips}" ]; then
-    for ip in ${param_whitelist_ips//,/ }; do
-      ufw allow from "${ip}" to any
-    done
-  fi
-fi
-
-# Allow ping length
-if [ -n "${param_ping_length}" ]; then
-  length=$((param_ping_length+28))
-  sed -i '/ufw-before-input.*icmp/s/ACCEPT/DROP/g' /etc/ufw/before.rules
-  sed -i "/^\# End required lines/a \\\n# allow ping length\n-I INPUT -p icmp -j DROP\n-I INPUT -p icmp -m length --length ${length} -j ACCEPT\n" /etc/ufw/before.rules
-fi
-
-# Turn ON the firewall
-if [ -n "${param_knockd_ports}" ]; then
-  echo "y" | ufw enable
-fi
-
-# Set redirect
-if [ -n "${param_redirect_url}" ]; then
-  apt -y install nginx
-  curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/nginx/default" >/etc/nginx/sites-available/default
-  sed -i "s/REDIRECT_URL/http:\/\/${param_redirect_url}/g" "/etc/nginx/sites-available/default"
-  systemctl restart nginx
-  ufw allow 80/tcp
 fi
 
 # Configure knockd
@@ -192,4 +194,9 @@ if [ -n "${param_knockd_ports}" ]; then
   systemctl daemon-reload
   systemctl enable knockd
   systemctl start knockd
+fi
+
+# Turn ON the firewall
+if [[ "$param_ipv6_disable" == "true" ]] || [ -n "${param_ping_length}" ] || [ -n "${param_knockd_ports}" ] || [ -n "${param_whitelist_ips}" ]; then
+  echo "y" | ufw enable
 fi
