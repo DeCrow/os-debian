@@ -1,44 +1,45 @@
 #!/bin/bash
 
 # Params list (use "-p" or "--params")
-# 1 - Set server hostname
-# 2 - Set server SSH Port
-# 3 - Set server timezone
-# 4 - Disable IPv6? (for yes "true")
-# 5 - Disable upgrade? (for yes "true")
-# 6 - Allow ping only that length
-# 7 - Redirect URL from 80 port
-# 8 - Clients IP whitelist (separate by ",")
+# 1  - Set server hostname
+# 2  - Set server SSH Port
+# 3  - Set server timezone
+# 4  - Upgrade OS? (for yes "true")
+# 5  - Disable IPv6? (for yes "true")
+# 6  - Allow ping only that length
+# 7  - Redirect URL from 80 port
+# 8  - Custom MOTD (for clean: "clean"):
+# 9  - Protect ports non SSH (sep. by ",")
+# 10 - Clients IP whitelist (sep. by ",")
 
 # Get init mode param
-param_mode=$1
+param_mode=${1}
 
 # Set user params
 if [[ "$param_mode" == "-p" ]] || [[ "$param_mode" == "--params" ]]; then
-  param_host_name=$2
-  param_ssh_port=$3
-  param_time_zone=$4
-  param_ping_length=$5
-  param_ipv6_disable=$6
-  param_upgrade_disable=$7
-  param_redirect_url=$8
-  param_whitelist_ips=$9
+  param_host_name=${2}
+  param_ssh_port=${3}
+  param_time_zone=${4}
+  param_upgrade_os=${5}
+  param_ipv6_disable=${6}
+  param_ping_length=${7}
+  param_redirect_url=${8}
+  param_custom_motd=${9}
+  param_knockd_ports=${10}
+  param_whitelist_ips=${11}
 else
-  echo "   Enter parameters or leave blank for no changes (7 steps)"
+  echo "   Enter parameters or leave blank for no changes (10 steps)"
   read -rp "1. Hostname: " param_host_name
   read -rp "2. SSH port: " param_ssh_port
   read -rp "3. Timezone: " param_time_zone
-  read -rp "4. Disable IPv6?: " param_ipv6_disable
-  read -rp "5. Disable upgrade?: " param_upgrade_disable
+  read -rp "4. Upgrade OS?: " param_upgrade_os
+  read -rp "5. Disable IPv6?: " param_ipv6_disable
   read -rp "6. Allow ping length: " param_ping_length
-  read -rp "7. URL for redirection: " param_redirect_url
-  read -rp "8. Clients IP whitelist ($(echo "${SSH_CLIENT}" | awk '{ print $1}')): " param_whitelist_ips
+  read -rp "7. URL redirection to: " param_redirect_url
+  read -rp "8. Custom MOTD (for clean: \"clean\"): " param_custom_motd
+  read -rp "9. Protect ports non SSH sep. by \",\": " param_knockd_ports
+  read -rp "10. Clients IP whitelist sep. by \",\" (you IP - $(echo "${SSH_CLIENT}" | awk '{ print $1}')): " param_whitelist_ips
 fi
-
-# Modify params
-if [ -z "${param_ipv6_disable}" ]; then param_ipv6_disable="false"; else param_ipv6_disable="true"; fi
-if [ -z "${param_upgrade_disable}" ]; then param_upgrade_disable="false"; else param_upgrade_disable="true"; fi
-param_host_ip=$(ip addr show | grep 'inet ' | grep -v 127.0.0.1 | awk '{print $2}' | cut -d/ -f1)
 
 # Print params
 cGreen="\e[1;32m"
@@ -46,24 +47,34 @@ cYellow="\e[1;33m"
 cRed="\e[1;91m"
 cEnd="\e[0m"
 
+# Modify params
+if [ -z "${param_ipv6_disable}" ]; then param_ipv6_disable="false"; else param_ipv6_disable="true"; fi
+if [ -z "${param_upgrade_os}" ]; then param_upgrade_os="false"; else param_upgrade_os="true"; fi
+
+param_host_ip=$(ip addr show | grep 'inet ' | grep -v 127.0.0.1 | awk '{print $2}' | cut -d/ -f1); print_host_ip=${cYellow}${param_host_ip}${cEnd}
 if [ -z "${param_host_name}" ]; then print_host_name="${cRed}no change${cEnd}"; else print_host_name="${cYellow}${param_host_name}${cEnd}"; fi
 if [ -z "${param_ssh_port}" ]; then print_ssh_port="${cRed}no change${cEnd}"; else print_ssh_port="${cYellow}${param_ssh_port}${cEnd}"; fi
 if [ -z "${param_time_zone}" ]; then print_time_zone="${cRed}no change${cEnd}"; else print_time_zone="${cYellow}${param_time_zone}${cEnd}"; fi
+if [[ "$param_upgrade_os" == "false" ]]; then print_upgrade_os="${cRed}no change${cEnd}"; else print_upgrade_os="${cYellow}${param_upgrade_os}${cEnd}"; fi
 if [[ "$param_ipv6_disable" == "false" ]]; then print_ipv6_disable="${cRed}no change${cEnd}"; else print_ipv6_disable="${cYellow}${param_ipv6_disable}${cEnd}"; fi
-if [[ "$param_upgrade_disable" == "false" ]]; then print_upgrade_disable="${cRed}no change${cEnd}"; else print_upgrade_disable="${cYellow}${param_upgrade_disable}${cEnd}"; fi
 if [ -z "${param_ping_length}" ]; then print_ping_length="${cRed}no change${cEnd}"; else print_ping_length="${cYellow}${param_ping_length}${cEnd}"; fi
 if [ -z "${param_redirect_url}" ]; then print_redirect_url="${cRed}no change${cEnd}"; else print_redirect_url="${cYellow}${param_redirect_url}${cEnd}"; fi
+if [ -z "${param_custom_motd}" ]; then print_custom_motd="${cRed}no change${cEnd}"; else print_custom_motd="${cYellow}${param_custom_motd}${cEnd}"; fi
+if [ -z "${param_knockd_ports}" ]; then print_knockd_ports="${cRed}no change${cEnd}"; else print_knockd_ports="${cYellow}${param_knockd_ports}${cEnd}"; fi
+if [ -z "${param_whitelist_ips}" ]; then print_whitelist_ips="${cRed}no change${cEnd}"; else print_whitelist_ips="${cYellow}${param_whitelist_ips}${cEnd}"; fi
 
 echo "=================================================="
-echo -e "${cGreen}1. Host name:       ${print_host_name}"
-echo -e "${cGreen}2. SSH port:        ${print_ssh_port}"
-echo -e "${cGreen}3. Timezone:        ${print_time_zone}"
-echo -e "${cGreen}4. Disable IPv6:    ${print_ipv6_disable}"
-echo -e "${cGreen}5. Disable upgrade: ${print_upgrade_disable}"
-echo -e "${cGreen}6. Ping length:     ${print_ping_length}"
-echo -e "${cGreen}7. Redirect URL:    ${print_redirect_url}"
-echo -e "${cGreen}8. Whitelist IP:    ${cYellow}${param_whitelist_ips}${cEnd}"
-echo -e "${cGreen}#. Host IP:         ${cYellow}${param_host_ip}${cEnd}"
+echo -e "${cGreen}#.  Host IP:         ${print_host_ip}"
+echo -e "${cGreen}1.  Host name:       ${print_host_name}"
+echo -e "${cGreen}2.  SSH port:        ${print_ssh_port}"
+echo -e "${cGreen}3.  Timezone:        ${print_time_zone}"
+echo -e "${cGreen}4.  Upgrade OS:      ${print_upgrade_os}"
+echo -e "${cGreen}5.  Disable IPv6:    ${print_ipv6_disable}"
+echo -e "${cGreen}6.  Ping length:     ${print_ping_length}"
+echo -e "${cGreen}7.  Redirect URL:    ${print_redirect_url}"
+echo -e "${cGreen}8.  Custom MOTD:     ${print_custom_motd}"
+echo -e "${cGreen}9.  Protect ports:   ${print_knockd_ports}"
+echo -e "${cGreen}10. Whitelist IP:    ${print_whitelist_ips}"
 echo "=================================================="
 
 if ! [[ "$param_mode" == "-p" ]] && ! [[ "$param_mode" == "--params" ]]; then
@@ -79,14 +90,13 @@ fi
 
 # Update & upgrade
 apt -y update
-if [[ "$param_upgrade_disable" == "false" ]]; then
+if [[ "$param_upgrade_os" == "true" ]]; then
   apt -y upgrade
   apt -y dist-upgrade
 fi
 
 # Install dependencies
-apt -y install curl htop mc sed wget
-apt -y install fail2ban ufw
+apt -y install curl sed wget
 
 # Set hostname
 if [ -n "${param_host_name}" ]; then
@@ -95,8 +105,10 @@ if [ -n "${param_host_name}" ]; then
   echo "${param_host_ip} ${param_host_name}" >>/etc/hosts
 fi
 
-# Clean MOTD
-echo "" >/etc/motd
+# Set custom MOTD
+if [ -n "${param_custom_motd}" ]; then
+  curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/motd/${param_custom_motd}" >/etc/motd
+fi
 
 # Set timezone
 if [ -n "${param_time_zone}" ]; then
@@ -110,11 +122,14 @@ if [ -n "${param_ssh_port}" ]; then
 fi
 
 # Configure fail2ban
-cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/fail2ban/jail.local" >>/etc/fail2ban/jail.local
-wget -O "/etc/fail2ban/action.d/ssh-ufw.conf" "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/fail2ban/ssh-ufw.conf"
-sed -i 's/enabled = true/enabled = false/g' /etc/fail2ban/jail.d/defaults-debian.conf
-systemctl restart fail2ban
+if [ -n "${param_knockd_ports}" ]; then
+  apt -y install fail2ban
+  cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+  curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/fail2ban/jail.local" >>/etc/fail2ban/jail.local
+  wget -O "/etc/fail2ban/action.d/ssh-ufw.conf" "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/fail2ban/ssh-ufw.conf"
+  sed -i 's/enabled = true/enabled = false/g' /etc/fail2ban/jail.d/defaults-debian.conf
+  systemctl restart fail2ban
+fi
 
 # Disable IPV6 protocol
 if [[ "$param_ipv6_disable" == "true" ]]; then
@@ -124,13 +139,16 @@ if [[ "$param_ipv6_disable" == "true" ]]; then
 fi
 
 # Configure firewall
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow "${param_ssh_port}"/tcp
-if [ -n "${param_whitelist_ips}" ]; then
-  for ip in ${param_whitelist_ips//,/ }; do
-    ufw allow from "${ip}" to any
-  done
+if [ -n "${param_knockd_ports}" ]; then
+  apt -y install ufw
+  ufw default deny incoming
+  ufw default allow outgoing
+  ufw allow "${param_ssh_port}"/tcp
+  if [ -n "${param_whitelist_ips}" ]; then
+    for ip in ${param_whitelist_ips//,/ }; do
+      ufw allow from "${ip}" to any
+    done
+  fi
 fi
 
 # Allow ping length
@@ -140,7 +158,10 @@ if [ -n "${param_ping_length}" ]; then
   sed -i "/^\# End required lines/a \\\n# allow ping length\n-I INPUT -p icmp -j DROP\n-I INPUT -p icmp -m length --length ${length} -j ACCEPT\n" /etc/ufw/before.rules
 fi
 
-echo "y" | ufw enable
+# Turn ON the firewall
+if [ -n "${param_knockd_ports}" ]; then
+  echo "y" | ufw enable
+fi
 
 # Set redirect
 if [ -n "${param_redirect_url}" ]; then
@@ -152,9 +173,17 @@ if [ -n "${param_redirect_url}" ]; then
 fi
 
 # Configure knockd
-if [ -n "${param_ssh_port}" ]; then
+if [ -n "${param_knockd_ports}" ]; then
   apt -y install knockd
   wget -O /etc/knockd.conf 'https://raw.githubusercontent.com/DeCrow/os-debian/main/content/knockd/knockd.conf'
+  for port in ${param_knockd_ports//,/ }; do
+    {
+      echo "[protection_port_${port}]"
+      echo "    sequence    = ${port}"
+      echo "    seq_timeout = 5"
+      echo "    command     = /sbin/ufw insert 1 deny from %IP% to any"
+    } >>/etc/knockd.conf
+  done
   curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/knockd/knockd.service" >/usr/lib/systemd/system/knockd.service
   sed -i 's/START_KNOCKD=0/START_KNOCKD=1/g' /etc/default/knockd
   interface=$(ip -o link show | sed -rn '/^[0-9]+: en/{s/.: ([^:]*):.*/\1/p}')
