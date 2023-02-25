@@ -6,15 +6,15 @@
 # 3 - Yandex Disc password
 
 # Get init mode param
-param_mode=$1
+param_mode=${1}
 
 # Set user params
 if [[ "$param_mode" == "-p" ]] || [[ "$param_mode" == "--params" ]]; then
-  param_mnt_folder=$2
-  param_login=$3
-  param_pass=$4
+  param_mnt_folder=${2}
+  param_login=${3}
+  param_pass=${4}
 else
-  echo "   Enter parameters (3 steps)"
+  echo "## Enter parameters (3 steps)"
   read -rp "1. Folder name: " param_mnt_folder
   read -rp "2. Yandex login: " param_login
   read -rp "3. Yandex pass: " param_pass
@@ -46,20 +46,25 @@ if ! [[ "$param_mode" == "-p" ]] && ! [[ "$param_mode" == "--params" ]]; then
 fi
 
 # Update & upgrade
-apt -y update
-apt -y upgrade
-apt -y dist-upgrade
+echo -e "${cGreen}* Update package sources list...${cEnd}"
+apt-get -y update > /dev/null
 
 # Hide interactive screens
 export DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies
-apt -y install davfs2
+echo -e "${cGreen}* Installing dependencies...${cEnd}"
+apt-get -y install davfs2 > /dev/null
 
 # Make folder
+echo -e "${cGreen}* Making directory...${cEnd}"
 mkdir -p "${mnt_folder}"
 
 # Configuration
+echo -e "${cGreen}* Make configuration...${cEnd}"
 echo "https://webdav.yandex.ru ${mnt_folder} davfs user,rw,nofail,_netdev,file_mode=0777,dir_mode=0777 0 0" >> /etc/fstab
 echo "https://webdav.yandex.ru ${param_login} ${param_pass}" >> /etc/davfs2/secrets
+
+# End
+echo -e "${cGreen}*** SEQUENCE COMPLETE ***${cEnd}"
 
