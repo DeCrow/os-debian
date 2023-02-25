@@ -99,7 +99,7 @@ fi
 
 # Install dependencies
 echo -e "${cGreen}* Installing dependencies...${cEnd}"
-apt -y -qq install curl sed wget
+apt-get -qq install curl sed wget
 
 # Set hostname
 if [ -n "${param_host_name}" ]; then
@@ -122,7 +122,7 @@ fi
 if [[ "$param_ipv6_disable" == "true" ]] || [ -n "${param_ping_length}" ] || [ -n "${param_knockd_ports}" ] || [ -n "${param_whitelist_ips}" ]; then
   firewall="true"
   echo -e "${cGreen}* Installing UFW firewall...${cEnd}"
-  apt -y -qq install ufw
+  apt-get -qq install ufw
   ufw default deny incoming
   ufw default allow outgoing
 fi
@@ -164,7 +164,7 @@ fi
 # Set redirect
 if [ -n "${param_redirect_url}" ]; then
   echo -e "${cGreen}* Installing NGINX...${cEnd}"
-  apt -y -qq install nginx
+  apt-get -qq install nginx
   curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/nginx/default" >/etc/nginx/sites-available/default
   sed -i "s/REDIRECT_URL/http:\/\/${param_redirect_url}/g" "/etc/nginx/sites-available/default"
   systemctl restart nginx
@@ -176,7 +176,7 @@ fi
 # Configure fail2ban
 if [ -n "${param_knockd_ports}" ]; then
   echo -e "${cGreen}* Installing FAIL2BAN...${cEnd}"
-  apt -y -qq install fail2ban
+  apt-get -qq install fail2ban
   cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
   curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/fail2ban/jail.local" >>/etc/fail2ban/jail.local
   wget -O "/etc/fail2ban/action.d/ssh-ufw.conf" "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/fail2ban/ssh-ufw.conf"
@@ -187,7 +187,7 @@ fi
 # Configure knockd
 if [ -n "${param_knockd_ports}" ]; then
   echo -e "${cGreen}* Installing KNOCKD...${cEnd}"
-  apt -y -qq install knockd
+  apt-get -qq install knockd
   wget -O /etc/knockd.conf 'https://raw.githubusercontent.com/DeCrow/os-debian/main/content/knockd/knockd.conf'
   for port in ${param_knockd_ports//,/ }; do
     {
