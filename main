@@ -188,6 +188,7 @@ if [ -n "${param_knockd_ports}" ]; then
       echo "    sequence    = ${port}"
       echo "    seq_timeout = 5"
       echo "    command     = /sbin/ufw insert 1 deny from %IP% to any"
+      echo ""
     } >>/etc/knockd.conf
   done
   curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/knockd/knockd.service" >/usr/lib/systemd/system/knockd.service
