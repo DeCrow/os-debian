@@ -89,14 +89,16 @@ if ! [[ "$param_mode" == "-p" ]] && ! [[ "$param_mode" == "--params" ]]; then
 fi
 
 # Update & upgrade
-apt -y update
+echo -e "${cGreen}* Update package sources list...${cEnd}"
+apt -y -qq update
 if [[ "$param_upgrade_os" == "true" ]]; then
+  echo -e "${cGreen}* Upgrades packages...${cEnd}"
   apt -y upgrade
   apt -y dist-upgrade
 fi
 
 # Install dependencies
-echo "${cGreen}* Installing dependencies...${cEnd}"
+echo -e "${cGreen}* Installing dependencies...${cEnd}"
 apt -y -qq install curl sed wget
 
 # Set hostname
@@ -119,7 +121,7 @@ fi
 # Configure firewall
 if [[ "$param_ipv6_disable" == "true" ]] || [ -n "${param_ping_length}" ] || [ -n "${param_knockd_ports}" ] || [ -n "${param_whitelist_ips}" ]; then
   firewall="true"
-  echo "${cGreen}* Installing UFW firewall...${cEnd}"
+  echo -e "${cGreen}* Installing UFW firewall...${cEnd}"
   apt -y -qq install ufw
   ufw default deny incoming
   ufw default allow outgoing
@@ -161,7 +163,7 @@ fi
 
 # Set redirect
 if [ -n "${param_redirect_url}" ]; then
-  echo "${cGreen}* Installing NGINX...${cEnd}"
+  echo -e "${cGreen}* Installing NGINX...${cEnd}"
   apt -y -qq install nginx
   curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/nginx/default" >/etc/nginx/sites-available/default
   sed -i "s/REDIRECT_URL/http:\/\/${param_redirect_url}/g" "/etc/nginx/sites-available/default"
@@ -173,7 +175,7 @@ fi
 
 # Configure fail2ban
 if [ -n "${param_knockd_ports}" ]; then
-  echo "${cGreen}* Installing FAIL2BAN...${cEnd}"
+  echo -e "${cGreen}* Installing FAIL2BAN...${cEnd}"
   apt -y -qq install fail2ban
   cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
   curl "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/fail2ban/jail.local" >>/etc/fail2ban/jail.local
@@ -184,7 +186,7 @@ fi
 
 # Configure knockd
 if [ -n "${param_knockd_ports}" ]; then
-  echo "${cGreen}* Installing KNOCKD...${cEnd}"
+  echo -e "${cGreen}* Installing KNOCKD...${cEnd}"
   apt -y -qq install knockd
   wget -O /etc/knockd.conf 'https://raw.githubusercontent.com/DeCrow/os-debian/main/content/knockd/knockd.conf'
   for port in ${param_knockd_ports//,/ }; do
