@@ -236,7 +236,7 @@ if [ -n "${param_knockd_ports}" ]; then
   done
   curl -s "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/knockd/knockd.service" >/usr/lib/systemd/system/knockd.service
   sed -i 's/START_KNOCKD=0/START_KNOCKD=1/g' /etc/default/knockd
-  interface=$(ip -o link show | sed -rn '/^[0-9]+: en/{s/.: ([^:]*):.*/\1/p}')
+  interface=$(ip -br l | awk '$1 !~ "lo|vir|wl" { print $1}')
   sed -i "s/#KNOCKD_OPTS=\"-i eth1\"/KNOCKD_OPTS=\"-i ${interface}\"/g" /etc/default/knockd
   systemctl enable systemd-networkd-wait-online.service
   systemctl daemon-reload
