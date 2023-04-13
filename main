@@ -194,7 +194,7 @@ if [ -n "${param_redirect_url}" ]; then
     apt-get -y install nginx > /dev/null
   fi
   curl -s "https://raw.githubusercontent.com/DeCrow/os-debian/main/content/nginx/default" >/etc/nginx/sites-available/default
-  sed -i "s/REDIRECT_URL/http:\/\/${param_redirect_url}/g" "/etc/nginx/sites-available/default"
+  sed -i "s/REDIRECT_URL/${param_redirect_url}/g" "/etc/nginx/sites-available/default"
   systemctl restart nginx
   if [ -n "${firewall}" ]; then
     ufw allow 80/tcp
